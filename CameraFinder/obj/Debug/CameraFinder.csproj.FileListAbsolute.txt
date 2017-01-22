@@ -1,6 +1,0 @@
-E:\Tera\CameraFinder\CameraFinder\CameraFinder\bin\Debug\CameraFinder.exe.config
-E:\Tera\CameraFinder\CameraFinder\CameraFinder\bin\Debug\CameraFinder.exe
-E:\Tera\CameraFinder\CameraFinder\CameraFinder\bin\Debug\CameraFinder.pdb
-E:\Tera\CameraFinder\CameraFinder\CameraFinder\obj\Debug\CameraFinder.csprojResolveAssemblyReference.cache
-E:\Tera\CameraFinder\CameraFinder\CameraFinder\obj\Debug\CameraFinder.exe
-E:\Tera\CameraFinder\CameraFinder\CameraFinder\obj\Debug\CameraFinder.pdb
