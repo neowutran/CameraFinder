@@ -28,7 +28,14 @@ namespace CameraFinder
             var client = new HttpClient();
             while (true)
             {
-                Angle(client);
+                try
+                {
+                    Angle(client);
+                }
+                catch ( Exception e)
+                {
+                    Debug.WriteLine(e);
+                }
                 Thread.Sleep(5);
             }
         }
