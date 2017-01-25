@@ -85,7 +85,7 @@ namespace CameraFinder
 
         public struct MEMORY_BASIC_INFORMATION
         {
-            public int BaseAddress;
+            public uint BaseAddress;
             public int AllocationBase;
             public int AllocationProtect;
             public int RegionSize;
