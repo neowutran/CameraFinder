@@ -46,7 +46,7 @@ namespace CameraFinder
                 {
                     Debug.WriteLine(e);
                 }
-                Thread.Sleep(5);
+                Thread.Sleep(15);
             }
         }
       
