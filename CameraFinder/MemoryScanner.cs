@@ -26,11 +26,9 @@ namespace CameraFinder
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool ReadProcessMemory(SafeProcessHandle hProcess, uint lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern int VirtualQueryEx(SafeProcessHandle hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
+        static extern int VirtualQueryEx(SafeProcessHandle hProcess, uint lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
 
 
         internal sealed class SafeProcessHandle : SafeHandleZeroOrMinusOneIsInvalid
@@ -55,25 +53,6 @@ namespace CameraFinder
             }
         }
 
-        [Flags]
-        public enum PageFlags
-        {
-            Execute = 0x10,
-            ExecuteRead = 0x20,
-            ExecuteReadWrite = 0x40,
-            ExecuteWriteCopy = 0x80,
-            NoAccess = 0x01,
-            ReadOnly = 0x02,
-            ReadWrite = 0x04,
-            WriteCopy = 0x08,
-            TargetsInvalid = 0x40000000,
-            TargetsNoUpdate = 0x40000000,
-
-            Guard = 0x100,
-            NoCache = 0x200,
-            WriteCombine = 0x400,
-        }
-
         public enum PageState
         {
             Commit = 0x1000,
@@ -82,71 +61,62 @@ namespace CameraFinder
         }
 
         // REQUIRED STRUCTS
+        public enum AllocationProtectEnum : uint
+        {
+            PAGE_EXECUTE = 0x00000010,
+            PAGE_EXECUTE_READ = 0x00000020,
+            PAGE_EXECUTE_READWRITE = 0x00000040,
+            PAGE_EXECUTE_WRITECOPY = 0x00000080,
+            PAGE_NOACCESS = 0x00000001,
+            PAGE_READONLY = 0x00000002,
+            PAGE_READWRITE = 0x00000004,
+            PAGE_WRITECOPY = 0x00000008,
+            PAGE_GUARD = 0x00000100,
+            PAGE_NOCACHE = 0x00000200,
+            PAGE_WRITECOMBINE = 0x00000400
+        }
+
+        public enum StateEnum : uint
+        {
+            MEM_COMMIT = 0x1000,
+            MEM_FREE = 0x10000,
+            MEM_RESERVE = 0x2000
+        }
+
+        public enum TypeEnum : uint
+        {
+            MEM_IMAGE = 0x1000000,
+            MEM_MAPPED = 0x40000,
+            MEM_PRIVATE = 0x20000
+        }
 
         public struct MEMORY_BASIC_INFORMATION
         {
             public uint BaseAddress;
-            public int AllocationBase;
-            public int AllocationProtect;
-            public int RegionSize;
-            public PageState State;
-            public PageFlags Protect;
-            public int lType;
-
-            public override string ToString()
-            {
-                var result = string.Format("{0:x8} - {1:x8} {2}", BaseAddress, BaseAddress + RegionSize, Protect);
-                if (State != PageState.Commit)
-                    result += " " + State;
-                return result;
-            }
+            public uint AllocationBase;
+            public AllocationProtectEnum AllocationProtect;
+            public uint RegionSize;
+            public StateEnum State;
+            public AllocationProtectEnum Protect;
+            public TypeEnum Type;
         }
 
-        public struct SYSTEM_INFO
-        {
-            public ushort processorArchitecture;
-            ushort reserved;
-            public uint pageSize;
-            public IntPtr minimumApplicationAddress;
-            public IntPtr maximumApplicationAddress;
-            public IntPtr activeProcessorMask;
-            public uint numberOfProcessors;
-            public uint processorType;
-            public uint allocationGranularity;
-            public ushort processorLevel;
-            public ushort processorRevision;
-        }
 
         private SafeProcessHandle processHandle;
 
         public IEnumerable<MEMORY_BASIC_INFORMATION> MemoryRegions()
         {
-            // getting minimum & maximum address
-
-            SYSTEM_INFO sys_info = new SYSTEM_INFO();
-            GetSystemInfo(out sys_info);
-
-            IntPtr proc_min_address = sys_info.minimumApplicationAddress;
-            IntPtr proc_max_address = sys_info.maximumApplicationAddress;
-
-            // saving the values as long ints so I won't have to do a lot of casts later
-            long proc_min_address_l = (long)proc_min_address;
-            long proc_max_address_l = (long)proc_max_address;
-
-            MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
-
-            long current = proc_min_address_l;
-            while (current < proc_max_address_l)
+            uint proc_min_address = 0x7FFF0000;
+            uint proc_max_address = 0xFFFFFFFF;
+            uint current = proc_min_address;
+            while (current < proc_max_address)
             {
-                VirtualQueryEx(processHandle, (IntPtr)current, out mem_basic_info, (uint)Marshal.SizeOf(mem_basic_info));
-
+                MEMORY_BASIC_INFORMATION mem_basic_info;
+                int result = VirtualQueryEx(processHandle, current, out mem_basic_info, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION)));
                 yield return mem_basic_info;
-
-                // move to the next memory chunk
                 current += mem_basic_info.RegionSize;
             }
         }
-
 
         public byte[] ReadMemory(uint baseAddress, int size)
         {
@@ -168,11 +138,6 @@ namespace CameraFinder
             if (bytesRead != size)
                 throw new Exception("Didn't read all bytes");
         }
-
-        //public static bool IsAccessible(MEMORY_BASIC_INFORMATION mem_basic_info)
-        //{
-        //    return mem_basic_info.Protect == PAGE_READWRITE && mem_basic_info.State == MEM_COMMIT;
-        //}
 
         private static SafeProcessHandle OpenProcess(Process process)
         {

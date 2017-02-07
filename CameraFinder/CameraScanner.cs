@@ -31,21 +31,23 @@ namespace CameraFinder
             while (true)
             {
                 try
-                {
-                    if(CameraAddress == 0)
+               {
+                    if (CameraAddress == 0)
                     {
                         FindCameraAddress();
+                    }
+
+                    if (CameraAddress == 0)
+                    {
+                        Debug.WriteLine("not found");
+                        Console.Beep();
                     }
 
                     if (CameraAddress != 0)
                     {
                         Angle(client);
                     }
-                }
-                catch ( Exception e)
-                {
-                    Debug.WriteLine(e);
-                }
+                }catch (Exception e){}
                 Thread.Sleep(15);
             }
         }
@@ -60,35 +62,24 @@ namespace CameraFinder
             }
             using (var memoryScanner = new MemoryScanner(teraProcess))
             {
-                for(var addr = 0xD200F0D0; addr <= 0xD500F0D0; addr += 0x00010000)
+                foreach (var region in memoryScanner.MemoryRegions().Where(
+                    x => x.Protect.HasFlag(MemoryScanner.AllocationProtectEnum.PAGE_READWRITE) &&
+                    x.State.HasFlag(MemoryScanner.StateEnum.MEM_COMMIT) &&
+                    x.Type.HasFlag(MemoryScanner.TypeEnum.MEM_PRIVATE)))
                 {
-
-                    byte[] camera = null;
                     try
                     {
-                        camera = memoryScanner.ReadMemory(addr, 2);
-                    }
-                    catch {
-                        //forbiden memory access
-                        continue;
-                    }
+                        var patternData = BitConverter.ToString(memoryScanner.ReadMemory(region.BaseAddress, (int)region.RegionSize));
 
-                    var patternCheckAddr = addr - 84;
-                    try
-                    {
-                        var patternData = BitConverter.ToString(memoryScanner.ReadMemory(patternCheckAddr, 12));
-                        var index = patternData.IndexOf("9A-99-99-3F-00-00-00-40-00-00-00-00");
+                        var index = patternData.IndexOf("9A-99-99-3F-00-00-00-40-00-00-00-00-00-00-00-00-00-00-00-00-00-00-80-3F");
                         if (index != -1)
                         {
-                            Console.WriteLine(" Camera address found: " + addr);
-                            CameraAddress = addr;
+                            Console.WriteLine(" Camera address found: " + (region.BaseAddress + index/3 + 84).ToString("X"));
+                            CameraAddress = region.BaseAddress + (uint)index/3 + 84;
                             return;
                         }
                     }
-                    catch {
-                        //same memory access shit
-                        continue;
-                    }
+                    catch { }
                 }
             }
         }
