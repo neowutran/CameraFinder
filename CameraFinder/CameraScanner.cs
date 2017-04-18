@@ -30,25 +30,20 @@ namespace CameraFinder
             var client = new HttpClient();
             while (true)
             {
-                try
-               {
+             //   try
+              // {
                     if (CameraAddress == 0)
                     {
                         FindCameraAddress();
-                    }
-
-                    if (CameraAddress == 0)
-                    {
-                        Debug.WriteLine("not found");
-                        Console.Beep();
                     }
 
                     if (CameraAddress != 0)
                     {
                         Angle(client);
                     }
-                }catch (Exception e){}
-                Thread.Sleep(15);
+                //}
+               // catch { }
+               // Thread.Sleep(30);
             }
         }
       
@@ -70,12 +65,12 @@ namespace CameraFinder
                     try
                     {
                         var patternData = BitConverter.ToString(memoryScanner.ReadMemory(region.BaseAddress, (int)region.RegionSize));
+                        var index = patternData.IndexOf("00-7E-08-DA-3B-0B-00-00-12-00-00-00-00-BA-C8-FD-80-F7-BA-FD-04-0A-00-00-1B-07-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-48-89-07-DA-01-00-00-00-01-00-00-00-00-00-00-00-00-00-00-00-00-00-80-3F-00-00-80-3F-00-00-00-00-00-00-00-00-00-00-00-00");
 
-                        var index = patternData.IndexOf("9A-99-99-3F-00-00-00-40-00-00-00-00-00-00-00-00-00-00-00-00-00-00-80-3F");
                         if (index != -1)
                         {
-                            Console.WriteLine(" Camera address found: " + (region.BaseAddress + index/3 + 84).ToString("X"));
-                            CameraAddress = region.BaseAddress + (uint)index/3 + 84;
+                            Console.WriteLine(" Camera address found: " + (region.BaseAddress + index/3 + 192).ToString("X"));
+                            CameraAddress = region.BaseAddress + (uint)index/3 + 192;
                             return;
                         }
                     }
