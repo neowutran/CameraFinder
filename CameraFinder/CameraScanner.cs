@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -65,12 +66,12 @@ namespace CameraFinder
                     try
                     {
                         var patternData = BitConverter.ToString(memoryScanner.ReadMemory(region.BaseAddress, (int)region.RegionSize));
-                        var index = patternData.IndexOf("00-7E-08-DA-3B-0B-00-00-12-00-00-00-00-BA-C8-FD-80-F7-BA-FD-04-0A-00-00-1B-07-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-48-89-07-DA-01-00-00-00-01-00-00-00-00-00-00-00-00-00-00-00-00-00-80-3F-00-00-80-3F-00-00-00-00-00-00-00-00-00-00-00-00");
-
-                        if (index != -1)
+                        var match = Regex.Match(patternData, @"3B\-0B\-00\-00\-12\-00\-00\-00\-00\-BA\-C8\-FD.{522}\-FF\-FF\-(.{5})");
+                                                
+                        if (match.Success)
                         {
-                            Console.WriteLine(" Camera address found: " + (region.BaseAddress + index/3 + 192).ToString("X"));
-                            CameraAddress = region.BaseAddress + (uint)index/3 + 192;
+                            Console.WriteLine(" Camera address found: " + (region.BaseAddress + (match.Index + match.Length - 5)/3).ToString("X"));
+                            CameraAddress = region.BaseAddress + (uint)(match.Index + match.Length - 5) / 3;
                             return;
                         }
                     }
