@@ -66,7 +66,7 @@ namespace CameraFinder
                     try
                     {
                         var patternData = BitConverter.ToString(memoryScanner.ReadMemory(region.BaseAddress, (int)region.RegionSize));
-                        var match = Regex.Match(patternData, @"3B\-0B\-00\-00\-12\-00\-00\-00\-00\-BA\-C8\-FD.{522}\-FF\-FF\-(.{5})");
+                        var match = Regex.Match(patternData, @"80\-3F\-00\-00\-80\-40\-00\-00\-80\-41\-00\-00\-80\-3F\-00\-00\-80\-3F\-FF\-FF\-FF\-FF\-00\-00\-00\-00\-00\-00\-FA\-44\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-00\-80\-3F.{498}\-FF\-FF\-(.{5})");
                                                 
                         if (match.Success)
                         {
